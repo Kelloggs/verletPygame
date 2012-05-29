@@ -14,6 +14,7 @@ from numpy import array, linalg, cross, dot
 import math
 import pygame
 import sys
+import time
 
 #globalsb
 world_size = 1000,700  
@@ -22,7 +23,8 @@ num_iterations = 10 #iteration for constraint relaxation
 pickedParticle = None
 mousePosition = 0,0 
 frames = 25
-drawVelocities = False
+drawVelocities = True
+paused = False
 
 class Material:
 	def __init__(self, stiffness=0.3, friction=0.1):
@@ -143,7 +145,7 @@ class Particle:
 	def draw(self):
 		self.screen.blit(self.image, self.bv)
 		if drawVelocities:
-			pygame.draw.line(self.screen, (255,0,0), self.x, self.x + self.velocity)
+			pygame.draw.aaline(self.screen, (255,0,0), self.x, self.x + 0.1*self.velocity)
 
 	def update(self):
 		self.bv[0] = self.x[0] - self.radius
@@ -260,7 +262,7 @@ def create2DCube(screen, rect, material):
 
 
 def main():
-	global pickedParticle, mousePosition, mouseClickPosition
+	global pickedParticle, mousePosition, mouseClickPosition, paused
 	#initialization of pygame and window
 	pygame.init()
 	screen = pygame.display.set_mode(world_size)
@@ -271,8 +273,8 @@ def main():
 	mat2 = Material(0.6)
 	sphere = create2DBall(screen, array([300., 300.]), 100., 8, mat2)
 	objects.append(sphere)
-	sphere2 = create2DBall(screen, array([100., 100.]), 80., 7, mat1)
-	objects.append(sphere2)
+	# sphere2 = create2DBall(screen, array([100., 100.]), 80., 7, mat1)
+	# objects.append(sphere2)
 
 	clock = pygame.time.Clock()
 
@@ -280,9 +282,6 @@ def main():
 	while True:
 		#set clock of pygame to predefined frames for equal timesteps
 		clock.tick(frames)
-
-		#clear screen with background color
-		screen.fill((80,80,80))
 
 		for event in pygame.event.get():
 			#stop the program if user wants us to
@@ -301,6 +300,17 @@ def main():
 				if pickedParticle:
 					pickedParticle.picked = False
 					pickedParticle = None
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_p:
+					paused = not paused
+				if event.key == pygame.K_s:
+					pygame.image.save(screen, "screenshot" + str(time.time()) + ".jpg")
+
+		if paused:
+			continue
+
+		#clear screen with background color
+		screen.fill((255,255,255))
 
 		#compute external forces
 		computeForces(objects)
